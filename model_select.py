@@ -21,7 +21,7 @@ class ModelSelector(object):
             this_fg.generate_all(self._x)
 
         # score models
-        est_dct = PipeLine.config["estimator"]
+        est_dct = ModelSelector.config["estimator"]
         estimator = eval(est_dct["type"])(est_dct["config"])
         estimator.fit(self._x, self._y)
 

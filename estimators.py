@@ -1,5 +1,5 @@
 from typing import Dict
-from numpy import ndarray, float64
+from numpy import ndarray
 
 
 class Estimator(object):
@@ -11,9 +11,6 @@ class Estimator(object):
         pass
 
     def predict(self, x: ndarray) -> ndarray:
-        pass
-
-    def score(self, x: ndarray, y: ndarray) -> float64:
         pass
 
 
@@ -44,12 +41,7 @@ if __name__ == "__main__":
         def predict(self, x):
             return self.model.predict(x)
 
-        def score(self, x, y):
-            return self.model.score(x, y)
-
 
     a_svm = AnovaSVM({"kernel": "linear", "anova__k": 10, "svc__C": 0.1})
     a_svm.fit(x, y)
     print(a_svm.predict(x))
-    print(a_svm.score(x, y))
-

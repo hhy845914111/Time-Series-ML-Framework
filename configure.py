@@ -1,5 +1,11 @@
+"""
+
+Notice: python>=3.6, dicts are ordered
+
+"""
 
 PIPELINE_CONFIG = {
+    "pipeline_name": "toy_pipeline",
     "feature_generators": {
         1: {
             "type": "EMAGenerator", "config": {"lag": 10}
@@ -11,6 +17,10 @@ PIPELINE_CONFIG = {
             "type": "AutoEncoder", "config": {}
         }
     },
+    "iterator": {
+        "type": "DayByDay", "config": {}
+
+    },
     "estimators": {
         1: {
             "type": "BayesianRidgeModel", "config": {"verbose": 1}
@@ -20,10 +30,7 @@ PIPELINE_CONFIG = {
         },
     },
     "judge": {
-        "type": "IC_judge", "config": {
-
-        }
-
+        "type": "IC_judge", "config": {}
     },
     "others": {}
 }

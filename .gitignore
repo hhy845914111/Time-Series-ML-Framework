@@ -1,4 +1,4 @@
 *.msg
-./.idea/
-./.ipynb_checkpoints/
+.idea/
+.ipynb_checkpoints/
 *.ipynb

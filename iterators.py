@@ -1,12 +1,16 @@
+from typing import Dict, Iterable, Tuple
+from numpy import ndarray as np_ndarray
+
+
 class DataIterator(object):
 
-    def __init__(self, config_dct):
+    def __init__(self, config_dct: Dict):
         self._config_dct = config_dct
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable:
         pass
 
-    def __next__(self):
+    def __next__(self) -> Tuple[np_ndarray, np_ndarray, np_ndarray, np_ndarray]:
         pass
 
 
@@ -22,10 +26,15 @@ class DFIterator(DataIterator):
         self._predict_period = self._config_dct["predict_period"]
         self._sample_generator = None
 
+        print("Loading data...")
         self._df = DFIterator.pd_read_msgpack(self._config_dct["data_path"])
+        print("Done.")
         if isinstance(self._df, list):
             raise IOError("data to be loaded is too big")
+
+        print("Generating training target...")
         self._generate_target()
+        print("Done.")
 
     def _generate_target(self):
         df_tpl = [i[1] for i in self._df.groupby("tkr")]
@@ -58,9 +67,10 @@ class DFIterator(DataIterator):
 
 
 if __name__ == "__main__":
+    from tqdm import tqdm
     itr = DFIterator({"data_path": "./data/toy_data.msg", "sample_lag": 15, "predict_period": 3})
 
-    for x_train, y_train, x_test, y_test in itr:
+    for x_train, y_train, x_test, y_test in tqdm(itr):
         print(x_train.shape, y_train.shape, x_test.shape, y_test.shape)
 
     print(1)

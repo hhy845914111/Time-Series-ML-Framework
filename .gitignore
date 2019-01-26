@@ -1,0 +1,4 @@
+*.msg
+./.idea/
+./.ipynb_checkpoints/
+*.ipynb

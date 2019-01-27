@@ -30,17 +30,28 @@ class EMAGenerator(FeatureGenerator):
 
     def __init__(self, config_dct):
         super(EMAGenerator, self).__init__(config_dct)
+        self._lag = self._config_dct["lag"]
 
     def generate_all(self, raw_df):
         for col_name in raw_df:
-            try:
-                raw_df[f"g_{col_name}_EMA_{self._config_dct['lag']}"] = self.generate_one(raw_df[col_name].values)
-            except:
-                continue
+            if str(col_name)[:2] != "g_":  # to prevent generate feature on automated features
+                try:
+                    raw_df[f"g_{col_name}_EMA_{self._lag}"] = self.generate_one(raw_df[col_name].values)
+                except:
+                    continue
 
     def generate_one(self, x):
-        return EMAGenerator.ta_EMA(x, self._config_dct["lag"])
+        return EMAGenerator.ta_EMA(x, self._lag)
 
 
-if __name__ == "__main__":
-    pass
+class AbnormalDataFiler(FeatureGenerator):
+
+    def __init__(self, config_dct):
+        super(AbnormalDataFiler, self).__init__(config_dct)
+
+    def generate_all(self, raw_df):
+        raw_df.fillna(method="ffill", inplace=True)
+        raw_df.fillna(0.0, inplace=True)
+
+    def generate_one(self, x):
+        pass

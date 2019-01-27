@@ -1,6 +1,6 @@
 from numpy import ndarray
-from pandas import DataFrame
 from typing import Dict
+from pandas import DataFrame
 
 
 class FeatureGenerator(object):
@@ -13,6 +13,7 @@ class FeatureGenerator(object):
         :param raw_df: raw_dataframe to be added with new columns of features
         :return: nothing, add features inplace
         """
+        pass
 
     def generate_one(self, x: ndarray) -> ndarray:
         """
@@ -23,26 +24,23 @@ class FeatureGenerator(object):
         pass
 
 
+class EMAGenerator(FeatureGenerator):
+
+    from talib import EMA as ta_EMA
+
+    def __init__(self, config_dct):
+        super(EMAGenerator, self).__init__(config_dct)
+
+    def generate_all(self, raw_df):
+        for col_name in raw_df:
+            try:
+                raw_df[f"g_{col_name}_EMA_{self._config_dct['lag']}"] = self.generate_one(raw_df[col_name].values)
+            except:
+                continue
+
+    def generate_one(self, x):
+        return EMAGenerator.ta_EMA(x, self._config_dct["lag"])
+
+
 if __name__ == "__main__":
-    from talib import EMA
-    import numpy as np
-
-    class EMAGenerator(FeatureGenerator):
-        """
-        one example of features
-        """
-        def __init__(self, config_dct):
-            super(EMAGenerator, self).__init__(config_dct)
-
-        def generate_all(self, raw_df):
-            for col_name in raw_df:
-                raw_df[f"{col_name}_EMA"] = self.generate_one(raw_df[col_name].values)
-
-        def generate_one(self, x):
-            return EMA(x, self._config_dct["lag"])
-
-    test_data = DataFrame(np.random.rand(2000, 10))
-
-    ema_generator = EMAGenerator({"lag": 10})
-    ema_generator.generate_all(test_data)
-    print(test_data.shape)  # -> (2000, 20)
+    pass

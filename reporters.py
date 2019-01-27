@@ -78,5 +78,5 @@ if __name__ == "__main__":
     mw_reporter.save_result({"ratio_ar": np.random.rand(1000, 1),
                              "date_ar": np.arange(1000),
                              "test_id": 1
-                             }
-                            )
+        }
+    )

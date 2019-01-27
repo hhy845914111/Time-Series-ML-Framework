@@ -21,7 +21,7 @@ PIPELINE_CONFIG = {
         "type": "DayByDay", "config": {}
 
     },
-    "estimators": {
+    "learning_models": {
         1: {
             "type": "BayesianRidgeModel", "config": {"verbose": 1}
         },
@@ -32,5 +32,5 @@ PIPELINE_CONFIG = {
     "judge": {
         "type": "IC_judge", "config": {}
     },
-    "others": {}
+    "others": {"raw_data_file": "./data/toy_data"}
 }

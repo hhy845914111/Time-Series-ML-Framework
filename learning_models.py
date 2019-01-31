@@ -21,7 +21,7 @@ class SVR(LearningModel):
     def __init__(self, config_dct):
         super(SVR, self).__init__(config_dct)
 
-        self.model = SVR.sl_SVR(kernel=self._config_dct["kernel"], verbose=self._config_dct["verbose"])
+        self.model = SVR.sl_SVR(**self._config_dct)
 
     def fit(self, x, y):
         self.model.fit(x, y)
@@ -37,7 +37,7 @@ class LR(LearningModel):
     def __init__(self, config_dct):
         super(LR, self).__init__(config_dct)
 
-        self.model = LR.sl_LR(n_jobs=self._config_dct["n_jobs"])
+        self.model = LR.sl_LR(**self._config_dct)
 
     def fit(self, x, y):
         self.model.fit(x, y)

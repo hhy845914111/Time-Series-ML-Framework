@@ -5,21 +5,35 @@ from numpy import float as np_float
 
 class Judge(object):
 
+    def __init__(self, test_id, config_dct: Dict):
+        self._config_dct = config_dct
+        self._test_id = test_id
+        self._result_lst = []
+
+    def _calc_score(self, y_predict: np_ndarray, y: np_ndarray) -> np_float:
+        raise NotImplementedError()
+
+    def score(self, y_predict: np_ndarray, y: np_ndarray) -> None:
+        self._result_lst.append(self._calc_score(y_predict, y))
+
+    def get_result(self):
+        raise NotImplementedError()
+
+
+class Saving(object):
+
     from os.path import join as p_join
     import sqlite3
     from os.path import exists as os_exists
     from os import makedirs as os_makedirs
     REPORT_PATH = "./results"
 
-    def __init__(self, test_id: str, config_dct: Dict):
+    def __init__(self, test_id: str):
         """
         :param config_dct: required parametes:
         None
         """
-        self._config_dct = config_dct
-
         self._test_id = test_id
-        self._result_lst = []
 
         self._this_path = Judge.p_join(Judge.REPORT_PATH, self._test_id)
         if not Judge.os_exists(self._this_path):
@@ -29,45 +43,53 @@ class Judge(object):
         self._cursor = self._conn.cursor()
         self._create_db_if_not_exists()
 
-    def _calc_score(self, y_predict: np_ndarray, y: np_ndarray) -> np_float:
-        raise NotImplementedError()
-
     def _create_db_if_not_exists(self) -> None:
         raise NotImplementedError()
 
     def _add_one_account(self) -> None:
         raise NotImplementedError()
 
-    def score(self, y_predict: np_ndarray, y: np_ndarray) -> None:
-        self._result_lst.append(self._calc_score(y_predict, y))
-
-    def save_result(self) -> None:
+    def get_result(self) -> None:
         self._conn.close()
 
 
 class ICJudge(Judge):
 
     from numpy import corrcoef as np_corrcoef
+    from numpy import float as np_float
+    from numpy import mean as np_mean
+
+    def __init__(self, test_id, config_dct):
+        super(ICJudge, self).__init__(test_id, config_dct)
+        self._ic_lag = self._config_dct["ic_lag"]
+
+    def _calc_score(self, y_predict: np_ndarray, y: np_ndarray) -> np_float:
+        return ICJudge.np_float(ICJudge.np_corrcoef(
+            y_predict[:-self._ic_lag].reshape(1, -1),
+            y[self._ic_lag:].reshape(1, -1))[0, 1])
+
+    def get_result(self):
+        return ICJudge.np_float(ICJudge.np_mean(self._result_lst))
+
+
+class ICJudgeAndSave(ICJudge, Saving):
+
     from numpy import array as np_array
     from numpy import mean as np_mean
     from matplotlib import pyplot as plt
 
-    def __init__(self, date_ar: np_ndarray, test_id: str, config_dct: Dict):
+    def __init__(self, test_id: str, config_dct: Dict):
         """
         :param date_ar:
         :param config_dct: required paramiters:
         figsize: Tuple
         ic_lag: int
         """
-        super(ICJudge, self).__init__(test_id, config_dct)
-        self._date_ar = date_ar
-        self._ic_lag = self._config_dct["ic_lag"]
-        self._fig = ICJudge.plt.figure(figsize=self._config_dct["figsize"])
+        ICJudge.__init__(self, test_id, config_dct)
+        Saving.__init__(self, test_id)
 
-    def _calc_score(self, y_predict: np_ndarray, y: np_ndarray) -> np_float:
-        return ICJudge.np_corrcoef(
-            y_predict[:-self._ic_lag].reshape(1, -1),
-            y[self._ic_lag:].reshape(1, -1))[0, 1]
+        self._ic_lag = self._config_dct["ic_lag"]
+        self._fig = ICJudge.ICJudgeAndSave.figure(figsize=self._config_dct["figsize"])
 
     def _create_db_if_not_exists(self) -> None:
         self._cursor.execute(
@@ -84,12 +106,11 @@ class ICJudge(Judge):
         )
         self._conn.commit()
 
-    def save_result(self):
-        result_ar = ICJudge.np_array(self._result_lst)
-        value = ICJudge.np_mean(result_ar)
+    def get_result(self):
+        value = ICJudge.get_result()
 
         self._add_one_account(self._test_id, value)
         self._fig.clear()
-        ICJudge.plt.plot(self._date_ar, result_ar)
-        self._fig.savefig(ICJudge.p_join(ICJudge.REPORT_PATH, "pics", f"{self._test_id}_{value}.png"))
+        ICJudgeAndSave.plt.plot(self._result_lst)
+        self._fig.savefig(ICJudgeAndSave.p_join(ICJudgeAndSave.REPORT_PATH, "pics", f"{self._test_id}_{value}.png"))
         self._conn.close()

@@ -1,4 +1,4 @@
-from framework import ModelSelector
+from model_select import ModelSelector
 
 model_selector = ModelSelector()
-model_selector.run()
+model_selector.optimize()

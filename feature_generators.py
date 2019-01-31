@@ -44,10 +44,10 @@ class EMAGenerator(FeatureGenerator):
         return EMAGenerator.ta_EMA(x, self._lag)
 
 
-class AbnormalDataFiler(FeatureGenerator):
+class AbnormalDataFiller(FeatureGenerator):
 
     def __init__(self, config_dct):
-        super(AbnormalDataFiler, self).__init__(config_dct)
+        super(AbnormalDataFiller, self).__init__(config_dct)
 
     def generate_all(self, raw_df):
         raw_df.fillna(method="ffill", inplace=True)

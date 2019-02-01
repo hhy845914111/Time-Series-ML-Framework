@@ -17,16 +17,19 @@ class LearningModel(object):
 class SVR(LearningModel):
 
     from sklearn.svm import SVR as sl_SVR
+    from sklearn.decomposition import PCA as sl_PCA
 
     def __init__(self, config_dct):
         super(SVR, self).__init__(config_dct)
-
+        self._pca = SVR.sl_PCA(10)
         self.model = SVR.sl_SVR(**self._config_dct)
 
     def fit(self, x, y):
+        x = self._pca.fit_transform(x)
         self.model.fit(x, y)
 
     def predict(self, x):
+        x = self._pca.transform(x)
         return self.model.predict(x)
 
 

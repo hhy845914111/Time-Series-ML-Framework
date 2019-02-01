@@ -21,12 +21,12 @@ PIPELINE_OBJ = {
         }
     },
     "iterator": {
-        "type": "DFIterator", "config": {"sample_lag": 10, "predict_period": 1}
+        "type": "DFIterator", "config": {"sample_lag": 2, "predict_period": 1}
 
     },
     "learning_model": hp.choice("model", (
         {
-            "type": "SVR", "config": {"kernel": hp.choice("SVR_kernel", ("rbf", "linear", "poly")), "degree": hp.choice("SRV_degree", range(5))}
+            "type": "SVR", "config": {"kernel": hp.choice("SVR_kernel", ("linear", "rbf", "poly")), "degree": hp.choice("SRV_degree", range(1, 3))}
         },
     )),
     "judge": {

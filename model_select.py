@@ -45,11 +45,12 @@ class ModelSelector(object):
         )
 
         # 1. read cache or generate df from raw_df
+        '''
         if os_exists(cache_file):
             save_cache = False
             print("Using cached DataFrame...")
             raw_df = read_msgpack(cache_file)
-        
+
         else:
             save_cache = True
             print("Generating feature DataFrame...")
@@ -60,10 +61,24 @@ class ModelSelector(object):
             fg_dct = config_dct["feature_generators"]
 
             # generate customized features
-            for fg in fg_dct.values():
+            for fg in tqdm(fg_dct.values()):
                 this_fg = eval(fg["type"])(config_dct=fg["config"])
                 this_fg.generate_all(raw_df)
 
+            raw_df.to_msgpack(cache_file)
+        '''
+        print("Generating feature DataFrame...")
+        raw_df = read_msgpack(
+            p_join(ModelSelector.DATA_FOLDER,
+                   config_dct["others"]["raw_data_file"])
+        )
+        fg_dct = config_dct["feature_generators"]
+
+        # generate customized features
+        for fg in tqdm(fg_dct.values()):
+            this_fg = eval(fg["type"])(config_dct=fg["config"])
+            this_fg.generate_all(raw_df)
+        
         # 2. get iterator of data, create training target
         dt_dct = config_dct["iterator"]
         data_iter = eval(dt_dct["type"])(raw_df, config_dct=dt_dct["config"], generate_target=True)
@@ -91,5 +106,5 @@ class ModelSelector(object):
             y_predict = this_lm.predict(x_test)
             judge.score(y_predict, y_test)
 
-        return judge.save_result()
+        return judge.get_result()
 

@@ -26,6 +26,7 @@ class Saving(object):
     import sqlite3
     from os.path import exists as os_exists
     from os import makedirs as os_makedirs
+    from os.path import join as p_join
     REPORT_PATH = "./results"
 
     def __init__(self, test_id: str):
@@ -35,11 +36,11 @@ class Saving(object):
         """
         self._test_id = test_id
 
-        self._this_path = Judge.p_join(Judge.REPORT_PATH, self._test_id)
-        if not Judge.os_exists(self._this_path):
-            Judge.os_makedirs(self._this_path)
+        self._this_path = Saving.p_join(Saving.REPORT_PATH, self._test_id)
+        if not Saving.os_exists(self._this_path):
+            Saving.os_makedirs(self._this_path)
 
-        self._conn = Judge.sqlite3.connect(Judge.p_join(self._this_path, "result.db"))
+        self._conn = Saving.sqlite3.connect(Saving.p_join(self._this_path, "result.db"))
         self._cursor = self._conn.cursor()
         self._create_db_if_not_exists()
 
@@ -89,7 +90,7 @@ class ICJudgeAndSave(ICJudge, Saving):
         Saving.__init__(self, test_id)
 
         self._ic_lag = self._config_dct["ic_lag"]
-        self._fig = ICJudge.ICJudgeAndSave.figure(figsize=self._config_dct["figsize"])
+        self._fig = ICJudgeAndSave.plt.figure(figsize=self._config_dct["figsize"])
 
     def _create_db_if_not_exists(self) -> None:
         self._cursor.execute(
@@ -107,7 +108,7 @@ class ICJudgeAndSave(ICJudge, Saving):
         self._conn.commit()
 
     def get_result(self):
-        value = ICJudge.get_result()
+        value = super(ICJudgeAndSave, self).get_result()
 
         self._add_one_account(self._test_id, value)
         self._fig.clear()

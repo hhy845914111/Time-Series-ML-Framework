@@ -6,6 +6,8 @@ from os.path import exists as os_exists
 from tqdm import tqdm
 from hyperopt import fmin as hp_fmin
 from hyperopt import tpe as hp_tpe
+from hyperopt import space_eval as hp_space_eval
+#from hyperopt.mongoexp import MongoTrials
 
 from configure import *
 from feature_generators import *
@@ -24,14 +26,20 @@ class ModelSelector(object):
         self._max_evals = max_evals
 
     def optimize(self):
+        #trials = MongoTrials("mongo://localhost:27017/local/jobs")
         best = hp_fmin(
             self.run,
             space=self._param_range_obj,
             algo=hp_tpe.suggest,
             max_evals=self._max_evals,
-            verbose=2
+            verbose=2,
+           #trials=trials
         )
-        ModelSelector.run(best, False)
+        optimized_param_dct = self._param_range_obj.copy()
+        best = hp_space_eval(self._param_range_obj, best)
+        optimized_param_dct["learning_model"] = best["learning_model"]
+
+        ModelSelector.run(optimized_param_dct, False)
 
     @staticmethod
     def run(config_dct, test=True):
@@ -107,4 +115,3 @@ class ModelSelector(object):
             judge.score(y_predict, y_test)
 
         return judge.get_result()
-

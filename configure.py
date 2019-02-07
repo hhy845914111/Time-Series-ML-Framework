@@ -24,9 +24,9 @@ PIPELINE_OBJ = {
         "type": "DFIterator", "config": {"sample_lag": 2, "predict_period": 1}
 
     },
-    "learning_model": hp.choice("model", (
+    "learning_model": hp.choice("learning_model", (
         {
-            "type": "SVR", "config": {"kernel": hp.choice("SVR_kernel", ("linear", "rbf", "poly")), "degree": hp.choice("SRV_degree", range(1, 3))}
+            "type": "SVR", "config": {"kernel": hp.choice("kernel", ("linear", "rbf", "poly")), "degree": hp.choice("degree", range(1, 3)), "max_iter": 100000}
         },
     )),
     "judge": {

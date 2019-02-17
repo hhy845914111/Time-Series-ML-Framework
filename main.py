@@ -1,6 +1,11 @@
-from model_select import ModelSelector
+from model_select import MPModelSelector
 import warnings
 warnings.filterwarnings("ignore")
 
-model_selector = ModelSelector()
-model_selector.optimize()
+
+def main():
+    model_selector = MPModelSelector(q_size=4)
+    model_selector.optimize()
+
+if __name__ == "__main__":
+    main()

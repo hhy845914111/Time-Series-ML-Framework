@@ -22,7 +22,6 @@ class Judge(object):
 
 class Saving(object):
 
-    from os.path import join as p_join
     import sqlite3
     from os.path import exists as os_exists
     from os import makedirs as os_makedirs

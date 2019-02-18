@@ -49,5 +49,85 @@ class LR(LearningModel):
         return self.model.predict(x)
 
 
+class AdaBoostRegress(LearningModel):
+
+    from sklearn.ensemble import AdaBoostRegressor as sl_abr
+
+    def __init__(self, config_dct):
+        super(AdaBoostRegress, self).__init__(config_dct)
+
+        self.model = AdaBoostRegress.sl_abr(**self._config_dct)
+
+    def fit(self, x, y):
+        self.model.fit(x, y)
+
+    def predict(self, x):
+        return self.model.predict(x)
+
+
+class BaggingRegress(LearningModel):
+
+    from sklearn.ensemble import BaggingRegressor as sl_bgr
+
+    def __init__(self, config_dct):
+        super(BaggingRegress, self).__init__(config_dct)
+
+        self.model = BaggingRegress.sl_bgr(**self._config_dct)
+
+    def fit(self, x, y):
+        self.model.fit(x, y)
+
+    def predict(self, x):
+        return self.model.predict(x)
+
+
+class ExtraTreesRegress(LearningModel):
+
+    from sklearn.ensemble import ExtraTreesRegressor as sl_etr
+
+    def __init__(self, config_dct):
+        super(ExtraTreesRegress, self).__init__(config_dct)
+
+        self.model = ExtraTreesRegress.sl_etr(**self._config_dct)
+
+    def fit(self, x, y):
+        self.model.fit(x, y)
+
+    def predict(self, x):
+        return self.model.predict(x)
+
+
+class GradientBoostingRegress(LearningModel):
+
+    from sklearn.ensemble import GradientBoostingRegressor as sl_gbr
+
+    def __init__(self, config_dct):
+        super(GradientBoostingRegress, self).__init__(config_dct)
+
+        self.model = GradientBoostingRegress.sl_gbr(**self._config_dct)
+
+    def fit(self, x, y):
+        self.model.fit(x, y)
+
+    def predict(self, x):
+        return self.model.predict(x)
+
+
+class RandomForestRegress(LearningModel):
+
+    from sklearn.ensemble import RandomForestRegressor as sl_rfr
+
+    def __init__(self, config_dct):
+        super(RandomForestRegress, self).__init__(config_dct)
+
+        self.model = RandomForestRegress.sl_rfr(**self._config_dct)
+
+    def fit(self, x, y):
+        self.model.fit(x, y)
+
+    def predict(self, x):
+        return self.model.predict(x)
+
+
 if __name__ == "__main__":
     pass

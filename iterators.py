@@ -60,8 +60,9 @@ class DFIterator(DataIterator):
             test_df = df_lst[i + 1]
             x_test = test_df.iloc[:, :-1].values
             y_test = test_df["y"].values.reshape(-1, 1)
+            tkr_name = test_df["tkr"].values.reshape(-1, 1)
 
-            yield x_train, y_train, x_test, y_test
+            yield x_train, y_train, x_test, y_test, tkr_name
 
     def __iter__(self):
         self._sample_generator = self._get_sample_generator()

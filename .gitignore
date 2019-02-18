@@ -5,3 +5,5 @@
 *.db
 *.png
 *.pyc
+*.hdf
+*.csv

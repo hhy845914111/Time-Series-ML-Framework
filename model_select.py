@@ -7,9 +7,8 @@ from tqdm import tqdm
 from hyperopt import fmin as hp_fmin
 from hyperopt import tpe as hp_tpe
 from hyperopt import space_eval as hp_space_eval
-#from hyperopt.mongoexp import MongoTrials
 
-from old_configure import *
+from configure import *
 from feature_generators import *
 from learning_models import *
 from iterators import *
@@ -26,14 +25,12 @@ class ModelSelector(object):
         self._max_evals = max_evals
 
     def optimize(self):
-        #trials = MongoTrials("mongo://localhost:27017/local/jobs")
         best = hp_fmin(
             self.run,
             space=self._param_range_obj,
             algo=hp_tpe.suggest,
             max_evals=self._max_evals,
             verbose=2,
-           #trials=trials
         )
         optimized_param_dct = self._param_range_obj.copy()
         best = hp_space_eval(self._param_range_obj, best)
@@ -125,7 +122,7 @@ class MPModelSelector(ModelSelector):
 
     def __init__(self, param_range_obj=PIPELINE_OBJ, max_evals=MAX_EVALS, process_count=None, q_size=20):
         super(MPModelSelector, self).__init__(param_range_obj, max_evals)
-        self._p_count = MPModelSelector.cpu_count() if process_count is None else process_count
+        self._p_count = MPModelSelector.cpu_count() - 1 if process_count is None else process_count
         self._q_size = q_size
 
     def optimize(self):
@@ -136,37 +133,25 @@ class MPModelSelector(ModelSelector):
             max_evals=self._max_evals,
             verbose=2,
         )
-        optimized_param_dct = self._param_range_obj.copy()
+        # optimized_param_dct = self._param_range_obj.copy()
         best = hp_space_eval(self._param_range_obj, best)
-        optimized_param_dct["learning_model"] = best["learning_model"]
-
-        ModelSelector.run(optimized_param_dct, False)
+        # optimized_param_dct["learning_model"] = best["learning_model"]
+        return best
 
     @staticmethod
-    def _work_func(in_queue, out_queue, close_event, judge_dct, is_test, test_id):
-        if is_test:
-            judge = eval(judge_dct["test_type"])(
-                test_id=str("test_id"),
-                config_dct=judge_dct["config"]
-            )
-        else:
-            judge = eval(judge_dct["product_type"])(
-                test_id=str(test_id),
-                config_dct=judge_dct["config"]
-            )
-
+    def _work_func(in_queue, out_queue, close_event):
         while not close_event.is_set() or not in_queue.empty():
             try:
-                idx, X_train, y_train, X_test, y_test, lm_dct = in_queue.get_nowait()
+                idx, X_train, y_train, X_test, y_test, tkr_name, lm_dct = in_queue.get_nowait()
             except MPModelSelector.mpq.Empty:
                 continue
 
             this_lm = eval(lm_dct["type"])(config_dct=lm_dct["config"])
             this_lm.fit(X_train, y_train)
 
-            y_predict = this_lm.predict(X_test)
+            y_predict = this_lm.predict(X_test).reshape(-1, 1)
 
-            out_queue.put((idx, y_predict, judge._calc_score(y_predict, y_test)))
+            out_queue.put((idx, y_predict, y_test, tkr_name))
 
     def run(self, config_dct, test=True):
         t_md5 = md5()
@@ -211,16 +196,9 @@ class MPModelSelector(ModelSelector):
         # 3. get judge and learning algorithms; train, predict and evaluate
         jg_dct = config_dct["judge"]
 
-        if test:
-            judge = eval(jg_dct["test_type"])(
-                test_id=str(config_dct["test_id"]),
-                config_dct=jg_dct["config"]
-            )
-        else:
-            judge = eval(jg_dct["product_type"])(
-                test_id=str(config_dct["test_id"]),
-                config_dct=jg_dct["config"]
-            )
+        judge = eval(jg_dct["type"])(
+            config_dct=jg_dct["config"]
+        )
 
         in_queue = MPModelSelector.Queue(maxsize=self._q_size)
         out_queue = MPModelSelector.Queue(maxsize=self._q_size)
@@ -228,7 +206,7 @@ class MPModelSelector(ModelSelector):
         p_lst = [
             MPModelSelector.Process(
                 target=MPModelSelector._work_func,
-                args=(in_queue, out_queue, close_event, jg_dct, test, config_dct["test_id"])
+                args=(in_queue, out_queue, close_event)
             ) for _ in range(self._p_count)
         ]
         [p.start() for p in p_lst]
@@ -236,11 +214,12 @@ class MPModelSelector(ModelSelector):
         lm_dct = config_dct["learning_model"]
         arg_lst = ((idx, *ctt, lm_dct) for idx, ctt in enumerate(data_iter))
 
-        rst_lst = []
         total_len = 0
         for arg in tqdm(arg_lst):
             try:
-                rst_lst.append(out_queue.get_nowait())
+                idx, y_predict, y_test, tkr_name = out_queue.get_nowait()
+                judge.add_score(y_predict, y_test, tkr_name, idx)
+                total_len -= 1
             except MPModelSelector.mpq.Empty:
                 pass
 
@@ -249,15 +228,15 @@ class MPModelSelector(ModelSelector):
 
         close_event.set()
 
-        while len(rst_lst) < total_len:
+        while total_len > 0:
             try:
-                rst_lst.append(out_queue.get_nowait())
+                idx, y_predict, y_test, tkr_name = out_queue.get_nowait()
+                judge.add_score(y_predict, y_test, tkr_name, idx)
+                total_len -= 1
             except MPModelSelector.mpq.Empty:
                 pass
 
         [p.join() for p in p_lst]
 
-        rst_lst.sort(key=lambda x: x[0])
-        judge._result_lst = [ctt[2] for ctt in rst_lst]
-
+        judge.save_result(config_dct)
         return judge.get_result()

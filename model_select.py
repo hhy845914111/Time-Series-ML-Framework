@@ -1,4 +1,3 @@
-from typing import Dict
 from pandas import read_hdf
 from hashlib import md5
 from os.path import join as p_join
@@ -119,11 +118,14 @@ class MPModelSelector(ModelSelector):
     from os import cpu_count
     from multiprocessing import Queue, Event, Process
     from multiprocessing import queues as mpq
+    from time import time
+    from numpy import inf as np_inf
 
-    def __init__(self, param_range_obj=PIPELINE_OBJ, max_evals=MAX_EVALS, process_count=None, q_size=20):
+    def __init__(self, process_count=None, q_size=20, param_range_obj=PIPELINE_OBJ, max_evals=MAX_EVALS, single_fit_max_time=SINGLE_FIT_MAX_TIME):
         super(MPModelSelector, self).__init__(param_range_obj, max_evals)
         self._p_count = MPModelSelector.cpu_count() - 1 if process_count is None else process_count
         self._q_size = q_size
+        self._max_time = single_fit_max_time
 
     def optimize(self):
         best = hp_fmin(
@@ -215,13 +217,19 @@ class MPModelSelector(ModelSelector):
         arg_lst = ((idx, *ctt, lm_dct) for idx, ctt in enumerate(data_iter))
 
         total_len = 0
+        last_start = MPModelSelector.time()
         for arg in tqdm(arg_lst):
+            this_start = MPModelSelector.time()
             try:
                 idx, y_predict, y_test, tkr_name = out_queue.get_nowait()
                 judge.add_score(y_predict, y_test, tkr_name, idx)
                 total_len -= 1
+                last_start = this_start
             except MPModelSelector.mpq.Empty:
-                pass
+                if this_start - last_start > self._max_time:
+                    [p.terminate() for p in p_lst]
+                    print("Too slow, terminate: ", config_dct)
+                    return -MPModelSelector.np_inf
 
             in_queue.put(arg)
             total_len += 1

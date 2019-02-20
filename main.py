@@ -4,7 +4,7 @@ warnings.filterwarnings("ignore")
 
 
 def main():
-    model_selector = MPModelSelector(process_count=15, q_size=8)
+    model_selector = MPModelSelector()
     best = model_selector.optimize()
     print(best)
 

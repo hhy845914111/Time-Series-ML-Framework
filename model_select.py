@@ -121,10 +121,10 @@ class MPModelSelector(ModelSelector):
     from time import time
     from numpy import inf as np_inf
 
-    def __init__(self, process_count=None, q_size=20, param_range_obj=PIPELINE_OBJ, max_evals=MAX_EVALS, single_fit_max_time=SINGLE_FIT_MAX_TIME):
+    def __init__(self, process_count=None, q_size=None, param_range_obj=PIPELINE_OBJ, max_evals=MAX_EVALS, single_fit_max_time=SINGLE_FIT_MAX_TIME):
         super(MPModelSelector, self).__init__(param_range_obj, max_evals)
         self._p_count = MPModelSelector.cpu_count() - 1 if process_count is None else process_count
-        self._q_size = q_size
+        self._q_size = self._p_count if q_size is None else q_size
         self._max_time = single_fit_max_time
 
     def optimize(self):
@@ -135,9 +135,7 @@ class MPModelSelector(ModelSelector):
             max_evals=self._max_evals,
             verbose=2,
         )
-        # optimized_param_dct = self._param_range_obj.copy()
         best = hp_space_eval(self._param_range_obj, best)
-        # optimized_param_dct["learning_model"] = best["learning_model"]
         return best
 
     @staticmethod
@@ -219,20 +217,24 @@ class MPModelSelector(ModelSelector):
         total_len = 0
         last_start = MPModelSelector.time()
         for arg in tqdm(arg_lst):
-            this_start = MPModelSelector.time()
             try:
                 idx, y_predict, y_test, tkr_name = out_queue.get_nowait()
                 judge.add_score(y_predict, y_test, tkr_name, idx)
                 total_len -= 1
-                last_start = this_start
             except MPModelSelector.mpq.Empty:
-                if this_start - last_start > self._max_time:
-                    [p.terminate() for p in p_lst]
-                    print("Too slow, terminate: ", config_dct)
-                    return -MPModelSelector.np_inf
+                pass
 
-            in_queue.put(arg)
-            total_len += 1
+            while 1:
+                try:
+                    in_queue.put_nowait(arg)
+                    total_len += 1
+                    last_start = MPModelSelector.time()
+                    break
+                except MPModelSelector.mpq.Full:
+                    if MPModelSelector.time() - last_start > self._max_time:
+                        [p.terminate() for p in p_lst]
+                        print("Too slow, terminate: ", config_dct)
+                        return -MPModelSelector.np_inf
 
         close_event.set()
 

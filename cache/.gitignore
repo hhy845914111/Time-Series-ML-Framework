@@ -2,7 +2,5 @@
 .idea/
 .ipynb_checkpoints/
 *.ipynb
-*.db
-*.png
 *.pyc
-*.hdf
+*.csv

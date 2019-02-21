@@ -1,6 +1,7 @@
 from typing import Dict, Iterable, Tuple
 from numpy import ndarray as np_ndarray
 from pandas import DataFrame as pd_DataFrame
+from configure import Y_COL_NAME
 
 
 class DataIterator(object):
@@ -42,7 +43,7 @@ class DFIterator(DataIterator):
     def _g_target(self):
         df_tpl = [i[1] for i in self._df.groupby("tkr")]
         for tdf in DFIterator.tqdm(df_tpl):
-            yield_ar = tdf["yield"]
+            yield_ar = tdf[Y_COL_NAME]
             tdf["y"] = yield_ar.shift(self._predict_period)
 
         self._df = DFIterator.pd_concat(df_tpl).dropna()

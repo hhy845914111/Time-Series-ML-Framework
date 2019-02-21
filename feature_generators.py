@@ -50,8 +50,55 @@ class AbnormalDataFiller(FeatureGenerator):
         super(AbnormalDataFiller, self).__init__(config_dct)
 
     def generate_all(self, raw_df):
-        raw_df.fillna(method="ffill", inplace=True)
-        raw_df.fillna(0.0, inplace=True)
+        return raw_df.dropna()
 
     def generate_one(self, x):
         pass
+
+
+class RollingMinMaxScaler(FeatureGenerator):
+
+    from sklearn.preprocessing import MinMaxScaler
+
+    def __init__(self, config_dct):
+        super(RollingMinMaxScaler, self).__init__(config_dct)
+        self._window_size = config_dct["window_size"]
+        self._target_lst = config_dct["target_lst"]
+        self._model = RollingMinMaxScaler.MinMaxScaler(copy=True)
+
+    def generate_all(self, raw_df):
+        date_lst = raw_df["date"].unique()
+        date_lst.sort()
+
+        for i in range(self._window_size, len(date_lst), 1):
+            train_mat = raw_df.loc[
+                (raw_df["date"] >= date_lst[i - self._window_size]) & (raw_df["date"] < date_lst[i]), self._target_lst].values
+            self._model.fit(train_mat)
+
+            change_set = raw_df.loc[raw_df["date"] == date_lst[i], self._target_lst].values
+            raw_df.loc[raw_df["date"] == date_lst[i], self._target_lst] = self._model.transform(change_set)
+
+        return raw_df
+
+
+class OneHotTransformer(FeatureGenerator):
+
+    from sklearn.preprocessing import OneHotEncoder
+    from pandas import DataFrame as pd_dataframe
+    from pandas import concat as pd_concat
+
+    def __init__(self, config_dct):
+        super(OneHotTransformer, self).__init__(config_dct)
+        self._model = OneHotTransformer.OneHotEncoder(sparse=False)
+        self._target_lst = config_dct["target_lst"]
+
+    def generate_all(self, raw_df):
+        for col_n in self._target_lst:
+            x = raw_df[col_n].astype(str).values
+            x_trans = self._model.fit_transform(x.reshape(-1, 1))
+            tdf = OneHotTransformer.pd_dataframe(data=x_trans, columns=self._model.get_feature_names((col_n, )), index=raw_df.index)
+            raw_df = OneHotTransformer.pd_concat((raw_df, tdf), axis=1)
+            del raw_df[col_n]
+
+        return raw_df
+

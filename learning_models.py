@@ -105,5 +105,100 @@ class RandomForestRegress(LearningModel):
         self._model = RandomForestRegress.model(**self._config_dct)
 
 
-if __name__ == "__main__":
-    pass
+class RidgeCVRegress(LearningModel):
+
+    from sklearn.linear_model import RidgeCV as model
+
+    def __init__(self, config_dct):
+        super(RidgeCVRegress, self).__init__(config_dct)
+        self._model = RidgeCVRegress.model(**self._config_dct)
+
+
+class LassoCVRegress(LearningModel):
+
+    from sklearn.linear_model import LassoCV as model
+
+    def __init__(self, config_dct):
+        super(LassoCVRegress, self).__init__(config_dct)
+        self._model = LassoCVRegress.model(**self._config_dct)
+
+
+class ElasticNetCVRegress(LearningModel):
+
+    from sklearn.linear_model import ElasticNetCV as model
+
+    def __init__(self, config_dct):
+        super(ElasticNetCVRegress, self).__init__(config_dct)
+        self._model = ElasticNetCVRegress.model(**self._config_dct)
+
+
+class OMPCVRegress(LearningModel):
+
+    from sklearn.linear_model import OrthogonalMatchingPursuitCV as model
+
+    def __init__(self, config_dct):
+        super(OMPCVRegress, self).__init__(config_dct)
+        self._model = OMPCVRegress.model(**self._config_dct)
+
+
+class BRidgeRegress(LearningModel):
+
+    from sklearn.linear_model import BayesianRidge as model
+
+    def __init__(self, config_dct):
+        super(BRidgeRegress, self).__init__(config_dct)
+        self._model = BRidgeRegress.model(**self._config_dct)
+
+
+class ARDRegression(LearningModel):
+
+    from sklearn.linear_model import ARDRegression as model
+
+    def __init__(self, config_dct):
+        super(ARDRegression, self).__init__(config_dct)
+        self._model = ARDRegression.model(**self._config_dct)
+
+
+class ARDRegress(LearningModel):
+
+    from sklearn.linear_model import ARDRegression as model
+
+    def __init__(self, config_dct):
+        super(ARDRegress, self).__init__(config_dct)
+        self._model = ARDRegress.model(**self._config_dct)
+
+
+class PARegress(LearningModel):
+
+    from sklearn.linear_model import PassiveAggressiveRegressor as model
+
+    def __init__(self, config_dct):
+        super(PARegress, self).__init__(config_dct)
+        self._model = PARegress.model(**self._config_dct)
+
+
+class HuberRegress(LearningModel):
+
+    from sklearn.linear_model import HuberRegressor as model
+
+    def __init__(self, config_dct):
+        super(HuberRegress, self).__init__(config_dct)
+        self._model = HuberRegress.model(**self._config_dct)
+
+
+class RANSACRegress(LearningModel):
+
+    from sklearn.linear_model import RANSACRegressor as model
+
+    def __init__(self, config_dct):
+        super(RANSACRegress, self).__init__(config_dct)
+        self._model = RANSACRegress.model(**self._config_dct)
+
+
+class TheilSenRegress(LearningModel):
+
+    from sklearn.linear_model import TheilSenRegressor as model
+
+    def __init__(self, config_dct):
+        super(TheilSenRegress, self).__init__(config_dct)
+        self._model = TheilSenRegress.model(**self._config_dct)

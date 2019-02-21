@@ -19,7 +19,7 @@ class ModelSelector(object):
     DATA_FOLDER = "./data"
     CACHE_FOLDER = "./cache"
 
-    def __init__(self, param_range_obj=PIPELINE_OBJ, max_evals=MAX_EVALS):
+    def __init__(self, param_range_obj, max_evals=MAX_EVALS):
         self._param_range_obj = param_range_obj
         self._max_evals = max_evals
 
@@ -37,80 +37,8 @@ class ModelSelector(object):
 
         ModelSelector.run(optimized_param_dct, False)
 
-    @staticmethod
-    def run(config_dct, test=True):
-        t_md5 = md5()
-        data_info_dct = {"feature_generators": config_dct["feature_generators"],
-                          "iterator__predict_period": config_dct["iterator"]["config"]["predict_period"]
-                          }
-        t_md5.update(str(data_info_dct).encode("utf-8"))
-        cache_file = p_join(
-            ModelSelector.CACHE_FOLDER, t_md5.hexdigest() + ".hdf"
-        )
-
-        # 1. read cache or generate df from raw_df
-
-        if os_exists(cache_file):
-            save_cache = False
-            print("Using cached DataFrame...")
-            raw_df = read_hdf(cache_file)
-
-        else:
-            save_cache = True
-            print("Generating feature DataFrame...")
-            raw_df = read_hdf(
-                p_join(ModelSelector.DATA_FOLDER,
-                       config_dct["others"]["raw_data_file"])
-            )
-            fg_dct = config_dct["feature_generators"]
-
-            # generate customized features
-            for fg in tqdm(fg_dct.values()):
-                this_fg = eval(fg["type"])(config_dct=fg["config"])
-                this_fg.generate_all(raw_df)
-
-            raw_df.to_hdf(cache_file, "data")
-
-        print("Generating feature DataFrame...")
-        raw_df = read_hdf(
-            p_join(ModelSelector.DATA_FOLDER,
-                   config_dct["others"]["raw_data_file"])
-        )
-        fg_dct = config_dct["feature_generators"]
-
-        # generate customized features
-        for fg in tqdm(fg_dct.values()):
-            this_fg = eval(fg["type"])(config_dct=fg["config"])
-            this_fg.generate_all(raw_df)
-        
-        # 2. get iterator of data, create training target
-        dt_dct = config_dct["iterator"]
-        data_iter = eval(dt_dct["type"])(raw_df, config_dct=dt_dct["config"], generate_target=True)
-
-        if save_cache:
-            data_iter.get_data_df_with_y().to_hdf(cache_file, "data")
-
-        # 3. get judge and learning algorithms; train, predict and evaluate
-        jg_dct = config_dct["judge"]
-        lm_dct = config_dct["learning_model"]
-        this_lm = eval(lm_dct["type"])(config_dct=lm_dct["config"])
-
-        if test:
-            judge = eval(jg_dct["test_type"])(
-                test_id=str(config_dct["test_id"]),
-                config_dct=jg_dct["config"]
-            )
-        else:
-            judge = eval(jg_dct["product_type"])(
-                test_id=str(config_dct["test_id"]),
-                config_dct=jg_dct["config"]
-            )
-        for x_train, y_train, x_test, y_test in tqdm(data_iter):
-            this_lm.fit(x_train, y_train)
-            y_predict = this_lm.predict(x_test)
-            judge.score(y_predict, y_test)
-
-        return judge.get_result()
+    def run(self, config_dct):
+        raise NotImplementedError()
 
 
 class MPModelSelector(ModelSelector):
@@ -121,7 +49,7 @@ class MPModelSelector(ModelSelector):
     from time import time
     from numpy import inf as np_inf
 
-    def __init__(self, process_count=None, q_size=None, param_range_obj=PIPELINE_OBJ, max_evals=MAX_EVALS, single_fit_max_time=SINGLE_FIT_MAX_TIME):
+    def __init__(self, param_range_obj, process_count=None, q_size=None, max_evals=MAX_EVALS, single_fit_max_time=SINGLE_FIT_MAX_TIME):
         super(MPModelSelector, self).__init__(param_range_obj, max_evals)
         self._p_count = MPModelSelector.cpu_count() - 1 if process_count is None else process_count
         self._q_size = self._p_count if q_size is None else q_size
@@ -153,7 +81,7 @@ class MPModelSelector(ModelSelector):
 
             out_queue.put((idx, y_predict, y_test, tkr_name))
 
-    def run(self, config_dct, test=True):
+    def run(self, config_dct):
         t_md5 = md5()
         data_info_dct = {"feature_generators": config_dct["feature_generators"],
                          "iterator__predict_period": config_dct["iterator"]["config"]["predict_period"]

@@ -68,12 +68,12 @@ class ICJudge(Judge):
         self._tdf = self._tdf.append(tdf)
 
         if len(curve_lst) > 0:
-            tdf2 = pd_DataFrame(data=curve_lst, columns=["", "train", "validate"])
+            tdf2 = pd_DataFrame(data=curve_lst, columns=["sample_size", "train", "validate"])
             tdf2.to_csv(p_join(ICJudge.REPORT_PATH, str(ICJudge.TEST_COUNT), f"curve_{date}.csv"), index=False)
             fig = plt.figure(figsize=self._config_dct["figsize"])
             ax = fig.add_subplot(111)
-            ax.plot(x=tdf2["sample_size"].values, y=tdf2["train"].values)
-            ax.plot(x=tdf2["sample_size"].values, y=tdf2["validate"].values)
+            ax.plot(tdf2["sample_size"].values, tdf2["train"].values, "r")
+            ax.plot(tdf2["sample_size"].values, tdf2["validate"].values, "b")
             fig.savefig(p_join(ICJudge.REPORT_PATH, "pics", f"{ICJudge.TEST_COUNT}_curve_{date}.png"))
 
     def get_result(self):
@@ -83,10 +83,11 @@ class ICJudge(Judge):
         self._tdf.sort_values(["date", "ticker"], inplace=True)
         self._tdf.to_csv(p_join(self._this_path, "results.csv"))
 
-        # rst_df = self._tdf.groupby("date").mean()
+        rst_df = self._tdf.groupby("date").mean()
         fig = plt.figure(figsize=self._config_dct["figsize"])
-        plt.plot(self._tdf["y_predict"].values.cumsum(), "b")
-        plt.plot(self._tdf["y_test"].values.cumsum(), "r", alpha=0.2)
+        ax = fig.add_subplot(111)
+        ax.plot(rst_df["y_predict"].values, "b")
+        ax.plot(rst_df["y_test"].values, "r", alpha=0.3)
         fig.savefig(p_join(ICJudge.REPORT_PATH, "pics", f"{ICJudge.TEST_COUNT}.png"))
 
         with open(p_join(self._this_path, "config.json"), "w") as fp:

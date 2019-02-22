@@ -1,6 +1,8 @@
 from numpy import ndarray
 from typing import Dict
 from pandas import DataFrame
+from configure import DATE_COL_NAME
+from tqdm import tqdm
 
 
 class FeatureGenerator(object):
@@ -67,16 +69,16 @@ class RollingMinMaxScaler(FeatureGenerator):
         self._model = RollingMinMaxScaler.MinMaxScaler(copy=True)
 
     def generate_all(self, raw_df):
-        date_lst = raw_df["date"].unique()
+        date_lst = raw_df[DATE_COL_NAME].unique()
         date_lst.sort()
 
-        for i in range(self._window_size, len(date_lst), 1):
+        for i in tqdm(range(self._window_size, len(date_lst), 1)):
             train_mat = raw_df.loc[
-                (raw_df["date"] >= date_lst[i - self._window_size]) & (raw_df["date"] < date_lst[i]), self._target_lst].values
+                (raw_df[DATE_COL_NAME] >= date_lst[i - self._window_size]) & (raw_df[DATE_COL_NAME] < date_lst[i]), self._target_lst].values
             self._model.fit(train_mat)
 
-            change_set = raw_df.loc[raw_df["date"] == date_lst[i], self._target_lst].values
-            raw_df.loc[raw_df["date"] == date_lst[i], self._target_lst] = self._model.transform(change_set)
+            change_set = raw_df.loc[raw_df[DATE_COL_NAME] == date_lst[i], self._target_lst].values
+            raw_df.loc[raw_df[DATE_COL_NAME] == date_lst[i], self._target_lst] = self._model.transform(change_set)
 
         return raw_df
 
@@ -93,7 +95,7 @@ class OneHotTransformer(FeatureGenerator):
         self._target_lst = config_dct["target_lst"]
 
     def generate_all(self, raw_df):
-        for col_n in self._target_lst:
+        for col_n in tqdm(self._target_lst):
             x = raw_df[col_n].astype(str).values
             x_trans = self._model.fit_transform(x.reshape(-1, 1))
             tdf = OneHotTransformer.pd_dataframe(data=x_trans, columns=self._model.get_feature_names((col_n, )), index=raw_df.index)

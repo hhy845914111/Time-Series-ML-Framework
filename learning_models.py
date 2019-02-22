@@ -1,5 +1,6 @@
 from typing import Dict
 from numpy import ndarray
+from numpy import float as np_float
 
 
 class LearningModel(object):
@@ -13,6 +14,9 @@ class LearningModel(object):
 
     def predict(self, x: ndarray) -> ndarray:
         return self._model.predict(x)
+
+    def score(self, x: ndarray, y: ndarray) -> np_float:
+        return self._model.score(x, y)
 
 
 class SVR(LearningModel):

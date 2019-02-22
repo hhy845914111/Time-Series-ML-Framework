@@ -5,10 +5,13 @@
 1. Intsall Anaconda or Miniconda, then change directory to root of this project and run:  
 conda env create -f work.yaml
 
-2. To use this environment, run:  
-activate work
+# Run batch
+1. Change configure dict to the one assigned  
+1.1 open "main.py"  
+1.2 change "model_selector = MPModelSelector(PIPELINE_OBJ_6)"
 
-# Amendment in v1.1
-1. Cache 'y' with 'x', formerly only cache 'x'.  
-2. Add global hyper-parameter auto-adjustment. Now estimator parameters in config file reflect a range of params.
-More detailed information see examples.  
+2. Run the program
+2.1 open a console and change dir to "ML_framework"
+2.2 input in console "conda activate work"
+2.3 input "python main.py"
+2.4 grab a coffee and wait to see results in ./results/

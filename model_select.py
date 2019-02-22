@@ -48,6 +48,7 @@ class MPModelSelector(ModelSelector):
     from multiprocessing import queues as mpq
     from time import time
     from numpy import inf as np_inf
+    from functools import reduce
 
     def __init__(self, param_range_obj, process_count=None, q_size=None, max_evals=MAX_EVALS, single_fit_max_time=SINGLE_FIT_MAX_TIME):
         super(MPModelSelector, self).__init__(param_range_obj, max_evals)
@@ -67,19 +68,45 @@ class MPModelSelector(ModelSelector):
         return best
 
     @staticmethod
-    def _work_func(in_queue, out_queue, close_event):
+    def _get_learning_curve(model, X_train, y_train, X_test, y_test, step=2):
+        total_len = len(y_train)
+        rst_lst = []
+        for i in range(1, total_len + step, step):
+            model.fit(X_train[:i, :], y_train[:i])
+            rst_lst.append((i, model.score(X_train[:i, :], y_train[:i]), model.score(X_test, y_test)))
+        return rst_lst
+
+    @staticmethod
+    def _work_func(in_queue, out_queue, close_event, curve_event):
         while not close_event.is_set() or not in_queue.empty():
             try:
-                idx, X_train, y_train, X_test, y_test, tkr_name, lm_dct = in_queue.get_nowait()
+                idx, X_train, y_train, X_test, y_test, tkr_name, lm_dct, is_curve_epoch = in_queue.get_nowait()
             except MPModelSelector.mpq.Empty:
                 continue
 
             this_lm = eval(lm_dct["type"])(config_dct=lm_dct["config"])
-            this_lm.fit(X_train, y_train)
+
+            if is_curve_epoch:
+                curve_event.set()
+                try:
+                    rst_lst = MPModelSelector._get_learning_curve(this_lm, X_train, y_train, X_test, y_test)
+                except ValueError: # problems in fitting
+                    out_queue.put(ValueError("fit failed"))
+                    continue
+
+            else:
+                rst_lst = []
+
+            try:
+                this_lm.fit(X_train, y_train)
+            except ValueError:
+                out_queue.put(ValueError("fit failed"))
+                continue
 
             y_predict = this_lm.predict(X_test).reshape(-1, 1)
 
-            out_queue.put((idx, y_predict, y_test, tkr_name))
+            out_queue.put((idx, y_predict, y_test, tkr_name, rst_lst))
+            curve_event.clear()
 
     def run(self, config_dct):
         t_md5 = md5()
@@ -92,7 +119,6 @@ class MPModelSelector(ModelSelector):
         )
 
         # 1. read cache or generate df from raw_df
-
         if os_exists(cache_file):
             save_cache = False
             print("Using cached DataFrame...")
@@ -110,13 +136,14 @@ class MPModelSelector(ModelSelector):
             # generate customized features
             for fg in tqdm(fg_dct.values()):
                 this_fg = eval(fg["type"])(config_dct=fg["config"])
-                this_fg.generate_all(raw_df)
+                raw_df = this_fg.generate_all(raw_df)
 
             raw_df.to_hdf(cache_file, "data")
 
         # 2. get iterator of data, create training target
         dt_dct = config_dct["iterator"]
-        data_iter = eval(dt_dct["type"])(raw_df, config_dct=dt_dct["config"], generate_target=save_cache)
+        #data_iter = eval(dt_dct["type"])(raw_df, config_dct=dt_dct["config"], generate_target=save_cache)
+        data_iter = eval(dt_dct["type"])(raw_df, config_dct=dt_dct["config"], generate_target=True)
 
         if save_cache:
             data_iter.get_data_df_with_y().to_hdf(cache_file, "data")
@@ -131,46 +158,70 @@ class MPModelSelector(ModelSelector):
         in_queue = MPModelSelector.Queue(maxsize=self._q_size)
         out_queue = MPModelSelector.Queue(maxsize=self._q_size)
         close_event = MPModelSelector.Event()
+        cur_event_lst = [MPModelSelector.Event() for _ in range(self._p_count)]
         p_lst = [
             MPModelSelector.Process(
                 target=MPModelSelector._work_func,
-                args=(in_queue, out_queue, close_event)
-            ) for _ in range(self._p_count)
+                args=(in_queue, out_queue, close_event, cur_event_lst[i])
+            ) for i in range(self._p_count)
         ]
         [p.start() for p in p_lst]
 
         lm_dct = config_dct["learning_model"]
-        arg_lst = ((idx, *ctt, lm_dct) for idx, ctt in enumerate(data_iter))
+        arg_lst = ((idx, *ctt, lm_dct, idx in LEARNING_CURVE_LST) for idx, ctt in enumerate(data_iter))
 
         total_len = 0
         last_start = MPModelSelector.time()
         for arg in tqdm(arg_lst):
             try:
-                idx, y_predict, y_test, tkr_name = out_queue.get_nowait()
-                judge.add_score(y_predict, y_test, tkr_name, idx)
+                obj = out_queue.get_nowait()
+
+                if isinstance(obj, ValueError):
+                    total_len -= 1
+                else:
+                    idx, y_predict, y_test, tkr_name, curve_lst = obj
+                    judge.add_score(y_predict, y_test, tkr_name, idx, curve_lst)
+                    total_len -= 1
+                """
+                idx, y_predict, y_test, tkr_name, curve_lst = obj
+                judge.add_score(y_predict, y_test, tkr_name, idx, curve_lst)
                 total_len -= 1
+                """
             except MPModelSelector.mpq.Empty:
                 pass
 
             while 1:
                 try:
                     in_queue.put_nowait(arg)
-                    total_len += 1
                     last_start = MPModelSelector.time()
+                    total_len += 1
                     break
                 except MPModelSelector.mpq.Full:
-                    if MPModelSelector.time() - last_start > self._max_time:
-                        [p.terminate() for p in p_lst]
-                        print("Too slow, terminate: ", config_dct)
-                        return -MPModelSelector.np_inf
+                    if MPModelSelector.reduce(lambda x, y: x or y.is_set(), cur_event_lst):
+                        last_start = MPModelSelector.time()
+                    else:
+                        if MPModelSelector.time() - last_start > SINGLE_FIT_MAX_TIME:
+                            [p.terminate() for p in p_lst]
+                            print("Too slow, terminate: ", config_dct)
+                            return -MPModelSelector.np_inf
 
         close_event.set()
 
         while total_len > 0:
             try:
-                idx, y_predict, y_test, tkr_name = out_queue.get_nowait()
-                judge.add_score(y_predict, y_test, tkr_name, idx)
+                obj = out_queue.get_nowait()
+
+                if isinstance(obj, ValueError):
+                    total_len -= 1
+                else:
+                    idx, y_predict, y_test, tkr_name, curve_lst = obj
+                    judge.add_score(y_predict, y_test, tkr_name, idx, curve_lst)
+                    total_len -= 1
+                """
+                idx, y_predict, y_test, tkr_name, curve_lst = obj
+                judge.add_score(y_predict, y_test, tkr_name, idx, curve_lst)
                 total_len -= 1
+                """
             except MPModelSelector.mpq.Empty:
                 pass
 

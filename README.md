@@ -8,7 +8,7 @@ conda env create -f work.yaml
 # Run batch
 1. Change configure dict to the one assigned  
 1.1 open "main.py"  
-1.2 change "model_selector = MPModelSelector(PIPELINE_OBJ_6)"
+1.2 change "model_selector = MPModelSelector(PIPELINE_OBJ_6)" > "model_selector = MPModelSelector(project assigned to you)"
 
 2. Run the program
 2.1 open a console and change dir to "ML_framework"

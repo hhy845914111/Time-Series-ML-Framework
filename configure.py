@@ -125,7 +125,7 @@ PIPELINE_OBJ_1 = {
     "judge": {
         "type": "ICJudge", "config": {"ic_lag": 0, "figsize": (20, 10)},
     },
-    "others": {"raw_data_file": "toy_data.hdf"}
+    "others": {"raw_data_file":  "real_data.hdf"}
 }
 
 PIPELINE_OBJ_2 = {
@@ -139,7 +139,7 @@ PIPELINE_OBJ_2 = {
         },
     },
     "iterator": {
-        "type": "DFIterator", "config": {"sample_lag": 20, "predict_period": 1}
+        "type": "DFIterator", "config": {"sample_lag": 30, "predict_period": 1}
 
     },
     "learning_model": hp.choice("learning_model", (
@@ -156,7 +156,7 @@ PIPELINE_OBJ_2 = {
     "judge": {
         "type": "ICJudge", "config": {"ic_lag": 0, "figsize": (20, 10)},
     },
-    "others": {"raw_data_file": "toy_data.hdf"}
+    "others": {"raw_data_file":  "real_data.hdf"}
 }
 
 PIPELINE_OBJ_3 = {
@@ -170,7 +170,7 @@ PIPELINE_OBJ_3 = {
         },
     },
     "iterator": {
-        "type": "DFIterator", "config": {"sample_lag": 20, "predict_period": 1}
+        "type": "DFIterator", "config": {"sample_lag": 30, "predict_period": 1}
 
     },
     "learning_model": hp.choice("learning_model", (
@@ -191,7 +191,7 @@ PIPELINE_OBJ_3 = {
     "judge": {
         "type": "ICJudge", "config": {"ic_lag": 0, "figsize": (20, 10)},
     },
-    "others": {"raw_data_file": "toy_data.hdf"}
+    "others": {"raw_data_file":  "real_data.hdf"}
 }
 
 PIPELINE_OBJ_4 = {
@@ -205,7 +205,7 @@ PIPELINE_OBJ_4 = {
         },
     },
     "iterator": {
-        "type": "DFIterator", "config": {"sample_lag": 20, "predict_period": 1}
+        "type": "DFIterator", "config": {"sample_lag": 30, "predict_period": 1}
 
     },
     "learning_model": hp.choice("learning_model", (
@@ -226,7 +226,7 @@ PIPELINE_OBJ_4 = {
     "judge": {
         "type": "ICJudge", "config": {"ic_lag": 0, "figsize": (20, 10)},
     },
-    "others": {"raw_data_file": "toy_data.hdf"}
+    "others": {"raw_data_file":  "real_data.hdf"}
 }
 
 PIPELINE_OBJ_5 = {
@@ -240,7 +240,7 @@ PIPELINE_OBJ_5 = {
         },
     },
     "iterator": {
-        "type": "DFIterator", "config": {"sample_lag": 20, "predict_period": 1}
+        "type": "DFIterator", "config": {"sample_lag": 30, "predict_period": 1}
 
     },
     "learning_model": hp.choice("learning_model", (
@@ -263,7 +263,7 @@ PIPELINE_OBJ_5 = {
     "judge": {
         "type": "ICJudge", "config": {"ic_lag": 0, "figsize": (20, 10)},
     },
-    "others": {"raw_data_file": "toy_data.hdf"}
+    "others": {"raw_data_file":  "real_data.hdf"}
 }
 
 PIPELINE_OBJ_6 = {
@@ -277,7 +277,7 @@ PIPELINE_OBJ_6 = {
         },
     },
     "iterator": {
-        "type": "DFIterator", "config": {"sample_lag": 20, "predict_period": 1}
+        "type": "DFIterator", "config": {"sample_lag": 30, "predict_period": 1}
 
     },
     "learning_model": hp.choice("learning_model", (

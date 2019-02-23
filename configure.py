@@ -254,7 +254,7 @@ PIPELINE_OBJ_5 = {
             "type": "ElasticNetCVRegress", "config": {}
         },
         {
-            "type": "OMPRegressCV", "config": {}
+            "type": "OMPCVRegress", "config": {}
         },
         {
             "type": "BRidgeRegress", "config": {}

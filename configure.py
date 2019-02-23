@@ -8,7 +8,7 @@ from sklearn.gaussian_process import kernels as gk
 
 MAX_EVALS = 200
 SINGLE_FIT_MAX_TIME = 60 * 1
-Y_COL_NAME = "Yield-lag-1"
+Y_COL_NAME = "Yield_real"
 TKR_COL_NAME = "ISIN number"
 DATE_COL_NAME = "Date"
 LEARNING_CURVE_LST = [i for i in range(100, 2904 + 100, 200)]

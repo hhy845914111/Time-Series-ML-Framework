@@ -3,6 +3,8 @@ from numpy import ndarray as np_ndarray
 from numpy import float as np_float
 from numpy import nan as np_nan
 
+from configure import DATE_COL_NAME, TKR_COL_NAME
+
 from numpy import corrcoef as np_corrcoef
 from pandas import DataFrame as pd_DataFrame
 from os.path import join as p_join
@@ -83,12 +85,12 @@ class ICJudge(Judge):
         self._tdf.sort_values(["date", "ticker"], inplace=True)
         self._tdf.to_csv(p_join(self._this_path, "results.csv"))
 
-        rst_df = self._tdf.groupby("date").mean()
-        fig = plt.figure(figsize=self._config_dct["figsize"])
-        ax = fig.add_subplot(111)
-        ax.plot(rst_df["y_predict"].values, "b")
-        ax.plot(rst_df["y_test"].values, "r", alpha=0.3)
-        fig.savefig(p_join(ICJudge.REPORT_PATH, "pics", f"{ICJudge.TEST_COUNT}.png"))
+        #rst_df = self._tdf.groupby("date").mean()
+        #fig = plt.figure(figsize=self._config_dct["figsize"])
+        #ax = fig.add_subplot(111)
+        #ax.plot(rst_df["y_predict"].values, "b")
+        #ax.plot(rst_df["y_test"].values, "r", alpha=0.3)
+        #fig.savefig(p_join(ICJudge.REPORT_PATH, "pics", f"{ICJudge.TEST_COUNT}.png"))
 
         with open(p_join(self._this_path, "config.json"), "w") as fp:
             fp.write(js_dump(total_config_dct))

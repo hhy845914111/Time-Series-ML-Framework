@@ -90,8 +90,9 @@ class MPModelSelector(ModelSelector):
                 curve_event.set()
                 try:
                     rst_lst = MPModelSelector._get_learning_curve(this_lm, X_train, y_train, X_test, y_test)
-                except ValueError: # problems in fitting
+                except: # problems in fitting
                     out_queue.put(ValueError("fit failed"))
+                    curve_event.clear()
                     continue
 
             else:
@@ -99,14 +100,12 @@ class MPModelSelector(ModelSelector):
 
             try:
                 this_lm.fit(X_train, y_train)
-            except ValueError:
+                y_predict = this_lm.predict(X_test).reshape(-1, 1)
+                out_queue.put((idx, y_predict, y_test, tkr_name, rst_lst))
+            except:
                 out_queue.put(ValueError("fit failed"))
+                curve_event.clear()
                 continue
-
-            y_predict = this_lm.predict(X_test).reshape(-1, 1)
-
-            out_queue.put((idx, y_predict, y_test, tkr_name, rst_lst))
-            curve_event.clear()
 
     def run(self, config_dct):
         t_md5 = md5()

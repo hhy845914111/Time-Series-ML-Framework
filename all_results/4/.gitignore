@@ -1,0 +1,7 @@
+*.msg
+.idea/
+.ipynb_checkpoints/
+*.ipynb
+*.pyc
+*.csv
+*.png

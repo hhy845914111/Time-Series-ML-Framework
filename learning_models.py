@@ -1,6 +1,7 @@
 from typing import Dict
 from numpy import ndarray
 from numpy import float as np_float
+from sklearn.utils import shuffle
 
 
 class LearningModel(object):
@@ -10,6 +11,7 @@ class LearningModel(object):
         self._model = None
 
     def fit(self, x: ndarray, y: ndarray) -> None:
+        x, y = shuffle(x, y)
         self._model.fit(x, y)
 
     def predict(self, x: ndarray) -> ndarray:

@@ -6,12 +6,14 @@ Notice: python>=3.6, dicts are ordered
 from hyperopt import hp
 from sklearn.gaussian_process import kernels as gk
 
-MAX_EVALS = 200
+MAX_EVALS = 30
 SINGLE_FIT_MAX_TIME = 60 * 1
 Y_COL_NAME = "Yield_real"
 TKR_COL_NAME = "ISIN number"
 DATE_COL_NAME = "Date"
 LEARNING_CURVE_LST = [i for i in range(100, 2904 + 100, 200)]
+ITER_SKIP = 100
+PCA_COUNT = 25
 
 
 one_hot_lst = ["ISO Country Code", 'Industry Lvl 2 Desc', 'Industry Lvl 3 Desc', 'Industry Lvl 4 Desc', 'Subordination Type']
@@ -144,13 +146,7 @@ PIPELINE_OBJ_2 = {
     },
     "learning_model": hp.choice("learning_model", (
         {
-            "type": "GPRegress", "config": {
-                "kernel": hp.choice("gp_kernel", (
-                        gk.ConstantKernel(), gk.DotProduct(), gk.ExpSineSquared(), gk.Matern(), gk.PairwiseKernel(),
-                        gk.RBF(), gk.RationalQuadratic(), gk.WhiteKernel(),
-                    )
-                )
-            }
+            "type": "GPRegress", "config": {}
         },
     )),
     "judge": {

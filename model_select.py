@@ -77,7 +77,7 @@ class MPModelSelector(ModelSelector):
         return rst_lst
 
     @staticmethod
-    def _work_func(in_queue, out_queue, close_event, curve_event):
+    def _work_func(in_queue, out_queue, close_event):
         while not close_event.is_set() or not in_queue.empty():
             try:
                 idx, X_train, y_train, X_test, y_test, tkr_name, lm_dct, is_curve_epoch = in_queue.get_nowait()
@@ -87,14 +87,13 @@ class MPModelSelector(ModelSelector):
             this_lm = eval(lm_dct["type"])(config_dct=lm_dct["config"])
 
             if is_curve_epoch:
-                curve_event.set()
+                # curve_event.set()
                 try:
                     rst_lst = MPModelSelector._get_learning_curve(this_lm, X_train, y_train, X_test, y_test)
                 except: # problems in fitting
                     out_queue.put(ValueError("fit failed"))
-                    curve_event.clear()
+                    # curve_event.clear()
                     continue
-
             else:
                 rst_lst = []
 
@@ -104,8 +103,7 @@ class MPModelSelector(ModelSelector):
                 out_queue.put((idx, y_predict, y_test, tkr_name, rst_lst))
             except:
                 out_queue.put(ValueError("fit failed"))
-                curve_event.clear()
-                continue
+                # curve_event.clear()
 
     def run(self, config_dct):
         t_md5 = md5()
@@ -157,11 +155,11 @@ class MPModelSelector(ModelSelector):
         in_queue = MPModelSelector.Queue(maxsize=self._q_size)
         out_queue = MPModelSelector.Queue(maxsize=self._q_size)
         close_event = MPModelSelector.Event()
-        cur_event_lst = [MPModelSelector.Event() for _ in range(self._p_count)]
+        # cur_event_lst = [MPModelSelector.Event() for _ in range(self._p_count)]
         p_lst = [
             MPModelSelector.Process(
                 target=MPModelSelector._work_func,
-                args=(in_queue, out_queue, close_event, cur_event_lst[i])
+                args=(in_queue, out_queue, close_event)
             ) for i in range(self._p_count)
         ]
         [p.start() for p in p_lst]
@@ -174,7 +172,6 @@ class MPModelSelector(ModelSelector):
         for arg in tqdm(arg_lst):
             try:
                 obj = out_queue.get_nowait()
-
                 if isinstance(obj, ValueError):
                     total_len -= 1
                 else:
@@ -196,13 +193,13 @@ class MPModelSelector(ModelSelector):
                     total_len += 1
                     break
                 except MPModelSelector.mpq.Full:
-                    if MPModelSelector.reduce(lambda x, y: x or y.is_set(), cur_event_lst):
-                        last_start = MPModelSelector.time()
-                    else:
-                        if MPModelSelector.time() - last_start > SINGLE_FIT_MAX_TIME:
-                            [p.terminate() for p in p_lst]
-                            print("Too slow, terminate: ", config_dct)
-                            return -MPModelSelector.np_inf
+                    # if MPModelSelector.reduce(lambda x, y: x or y.is_set(), cur_event_lst):
+                    #    last_start = MPModelSelector.time()
+                    # else:
+                    if MPModelSelector.time() - last_start > SINGLE_FIT_MAX_TIME:
+                        [p.terminate() for p in p_lst]
+                        print("Too slow, terminate: ", config_dct)
+                        return -MPModelSelector.np_inf
 
         close_event.set()
 

@@ -3,7 +3,7 @@ from numpy import ndarray as np_ndarray
 from pandas import DataFrame as pd_DataFrame
 from pandas import concat as pd_concat
 from tqdm import tqdm
-from configure import Y_COL_NAME, DATE_COL_NAME, TKR_COL_NAME
+from configure import Y_COL_NAME, DATE_COL_NAME, TKR_COL_NAME, ITER_SKIP
 
 
 class DataIterator(object):
@@ -32,7 +32,7 @@ class DFIterator(DataIterator):
         self._sample_lag = self._config_dct["sample_lag"]
         self._predict_period = self._config_dct["predict_period"]
         self._sample_generator = None
-        self._df = df
+        self._df = df.iloc[ITER_SKIP:, :]
         self._df["y"] = None
         self._feature_lst = []
 
